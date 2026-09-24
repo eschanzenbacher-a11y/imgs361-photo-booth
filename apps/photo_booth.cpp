@@ -27,7 +27,7 @@ struct ProcessingState {
   bool inversion_enabled{false};
   bool histogram_enabled{false};
   bool performance_overlay_enabled{false};
-  bool quantization_enabled{false};
+  int quantization_levels{256};
   bool histogram_equalization_enabled{false};
   bool mean_filter_enabled{false};
 };
@@ -53,8 +53,10 @@ cv::Mat processFrame(const cv::Mat& frame,
     processed_frame = photo_booth::swapRedBlueChannels(processed_frame);
   }
 
-  if (state.quantization_enabled) {
-    processed_frame = photo_booth::quantizeImage(processed_frame, 16);
+  if (state.quantization_levels < 256) {
+    processed_frame =
+      photo_booth::quantizeImage(processed_frame,
+                                 state.quantization_levels);
   }
 
   if (state.histogram_equalization_enabled) {
@@ -140,7 +142,7 @@ void printControls() {
             << "\n"
             << "  Processing\n"
             << "    n      Toggle image negative/inversion\n"
-            << "    z      Toggle 16-level quantization\n"
+            << "    z      Cycle quantization levels (128 to 2)\n"
 	    << "    e      Toggle histogram equalization\n"
             << "    m      Toggle 3x3 mean filter\n"
             << "\n"
@@ -189,11 +191,22 @@ bool handleKey(const int key, ProcessingState& state) {
     //
     case 'z':
     case 'Z':
-      state.quantization_enabled = !state.quantization_enabled;
+      if (state.quantization_levels == 256) {
+        state.quantization_levels = 128;
+    } else if (state.quantization_levels == 2) {
+      state.quantization_levels = 256;
+    } else {
+      state.quantization_levels /= 2;
+    }
 
-      std::cout << "Quantization (16 levels): "
-                << (state.quantization_enabled ? "ON" : "OFF") << '\n';
-      break;
+  if (state.quantization_levels == 256) {
+    std::cout << "Quantization: OFF\n";
+  } else {
+    std::cout << "Quantization: "
+              << state.quantization_levels
+              << " levels per channel\n";
+  }
+  break;
 
     case 'e':
     case 'E':
