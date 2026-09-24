@@ -23,4 +23,18 @@ cv::Mat swapRedBlueChannels(const cv::Mat& image);
  */
 cv::Mat invertImage(const cv::Mat& image);
 
+/**
+ * @brief Quantizes an 8-bit BGR image to a specified number of levels.
+ */
+cv::Mat quantizeImage(const cv::Mat& image, int levels);
+
+/**
+ * @brief Applies histogram equalization to an 8-bit BGR image.
+ */
+cv::Mat equalizeHistogram(const cv::Mat& image);
+
+/**
+ * @brief Applies a 3x3 mean smoothing filter to an 8-bit BGR image.
+ */
+cv::Mat meanFilter(const cv::Mat& image);
 }  // namespace photo_booth

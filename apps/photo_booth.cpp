@@ -27,6 +27,9 @@ struct ProcessingState {
   bool inversion_enabled{false};
   bool histogram_enabled{false};
   bool performance_overlay_enabled{false};
+  bool quantization_enabled{false};
+  bool histogram_equalization_enabled{false};
+  bool mean_filter_enabled{false};
 };
 
 cv::Mat processFrame(const cv::Mat& frame,
@@ -48,6 +51,18 @@ cv::Mat processFrame(const cv::Mat& frame,
 
   if (config.channel_swap_enabled) {
     processed_frame = photo_booth::swapRedBlueChannels(processed_frame);
+  }
+
+  if (state.quantization_enabled) {
+    processed_frame = photo_booth::quantizeImage(processed_frame, 16);
+  }
+
+  if (state.histogram_equalization_enabled) {
+    processed_frame = photo_booth::equalizeHistogram(processed_frame);
+  }
+
+  if (state.mean_filter_enabled) {
+    processed_frame = photo_booth::meanFilter(processed_frame);
   }
 
   return processed_frame;
@@ -125,6 +140,9 @@ void printControls() {
             << "\n"
             << "  Processing\n"
             << "    n      Toggle image negative/inversion\n"
+            << "    z      Toggle 16-level quantization\n"
+	    << "    e      Toggle histogram equalization\n"
+            << "    m      Toggle 3x3 mean filter\n"
             << "\n"
             << "  Analysis / display\n"
             << "    h      Toggle histogram display\n"
@@ -169,6 +187,32 @@ bool handleKey(const int key, ProcessingState& state) {
     //
     // Analysis and display.
     //
+    case 'z':
+    case 'Z':
+      state.quantization_enabled = !state.quantization_enabled;
+
+      std::cout << "Quantization (16 levels): "
+                << (state.quantization_enabled ? "ON" : "OFF") << '\n';
+      break;
+
+    case 'e':
+    case 'E':
+      state.histogram_equalization_enabled =
+        !state.histogram_equalization_enabled;
+
+      std::cout << "Histogram equalization: "
+                << (state.histogram_equalization_enabled ? "ON" : "OFF")
+                << '\n';
+      break;
+
+    case 'm':
+    case 'M':
+      state.mean_filter_enabled = !state.mean_filter_enabled;
+
+      std::cout << "3x3 mean filter: "
+                << (state.mean_filter_enabled ? "ON" : "OFF") << '\n';
+      break;
+
     case 'h':
     case 'H':
       state.histogram_enabled = !state.histogram_enabled;
