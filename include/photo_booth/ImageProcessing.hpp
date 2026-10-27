@@ -37,4 +37,20 @@ cv::Mat equalizeHistogram(const cv::Mat& image);
  * @brief Applies a 3x3 mean smoothing filter to an 8-bit BGR image.
  */
 cv::Mat meanFilter(const cv::Mat& image);
+
+/**
+ * @brief Applies binary thresholding based on average BGR brightness.
+ */
+cv::Mat thresholdImage(const cv::Mat& image, int threshold);
+
+/**
+ * @brief Sharpens an 8-bit BGR image using a spatial filter.
+ */
+cv::Mat sharpenImage(const cv::Mat& image);
+
+/**
+ * @brief Detects edges using Sobel gradients.
+ */
+cv::Mat sobelEdgeImage(const cv::Mat& image);
+
 }  // namespace photo_booth

@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cmath>
 
 namespace photo_booth {
 
@@ -175,6 +177,128 @@ cv::Mat meanFilter(const cv::Mat& image) {
       output_pixel[0] = blue_sum / 9;
       output_pixel[1] = green_sum / 9;
       output_pixel[2] = red_sum / 9;
+    }
+  }
+
+  return output;
+}
+
+  cv::Mat thresholdImage(const cv::Mat& image, int threshold) {
+    validateImage(image, "thresholdImage()");
+
+    cv::Mat output = image.clone();
+
+    for (int row = 0; row < image.rows; ++row) {
+      for (int column = 0; column < image.cols; ++column) {
+        cv::Vec3b pixel = image.at<cv::Vec3b>(row, column);
+
+        int brightness = (pixel[0] + pixel[1] + pixel[2]) / 3;
+
+        unsigned char new_value = 0;
+
+        if (brightness > threshold) {
+          new_value = 255;
+        }
+
+        cv::Vec3b& output_pixel = output.at<cv::Vec3b>(row, column);
+
+        output_pixel[0] = new_value;
+        output_pixel[1] = new_value;
+        output_pixel[2] = new_value;
+      }
+    }
+
+    return output;
+  }
+
+cv::Mat sharpenImage(const cv::Mat& image) {
+  validateImage(image, "sharpenImage()");
+
+  cv::Mat output = image.clone();
+
+  const int kernel[3][3] = {
+      { 0, -1,  0},
+      {-1,  5, -1},
+      { 0, -1,  0}
+  };
+
+  for (int row = 1; row < image.rows - 1; ++row) {
+    for (int column = 1; column < image.cols - 1; ++column) {
+      cv::Vec3b& output_pixel = output.at<cv::Vec3b>(row, column);
+
+      for (int channel = 0; channel < 3; ++channel) {
+        int sum = 0;
+
+        for (int row_offset = -1; row_offset <= 1; ++row_offset) {
+          for (int column_offset = -1; column_offset <= 1; ++column_offset) {
+            cv::Vec3b neighbor =
+                image.at<cv::Vec3b>(row + row_offset,
+                                    column + column_offset);
+
+            sum += neighbor[channel] *
+                   kernel[row_offset + 1][column_offset + 1];
+          }
+        }
+
+        output_pixel[channel] =
+            static_cast<unsigned char>(std::clamp(sum, 0, 255));
+      }
+    }
+  }
+
+  return output;
+}
+
+cv::Mat sobelEdgeImage(const cv::Mat& image) {
+  validateImage(image, "sobelEdgeImage()");
+
+  cv::Mat output = image.clone();
+
+  const int gx_kernel[3][3] = {
+      {-1, 0, 1},
+      {-2, 0, 2},
+      {-1, 0, 1}
+  };
+
+  const int gy_kernel[3][3] = {
+      {-1, -2, -1},
+      { 0,  0,  0},
+      { 1,  2,  1}
+  };
+
+  for (int row = 1; row < image.rows - 1; ++row) {
+    for (int column = 1; column < image.cols - 1; ++column) {
+      int gx = 0;
+      int gy = 0;
+
+      for (int row_offset = -1; row_offset <= 1; ++row_offset) {
+        for (int column_offset = -1; column_offset <= 1; ++column_offset) {
+          cv::Vec3b neighbor =
+              image.at<cv::Vec3b>(row + row_offset,
+                                  column + column_offset);
+
+          int brightness =
+              (neighbor[0] + neighbor[1] + neighbor[2]) / 3;
+
+          gx += brightness *
+                gx_kernel[row_offset + 1][column_offset + 1];
+
+          gy += brightness *
+                gy_kernel[row_offset + 1][column_offset + 1];
+        }
+      }
+
+      int magnitude = static_cast<int>(
+          std::sqrt(static_cast<double>(gx * gx + gy * gy)));
+
+      unsigned char edge = static_cast<unsigned char>(
+          std::clamp(magnitude, 0, 255));
+
+      cv::Vec3b& output_pixel = output.at<cv::Vec3b>(row, column);
+
+      output_pixel[0] = edge;
+      output_pixel[1] = edge;
+      output_pixel[2] = edge;
     }
   }
 

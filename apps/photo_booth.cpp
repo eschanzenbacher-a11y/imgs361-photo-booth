@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
@@ -30,6 +31,10 @@ struct ProcessingState {
   int quantization_levels{256};
   bool histogram_equalization_enabled{false};
   bool mean_filter_enabled{false};
+  bool threshold_enabled{false};
+  int threshold_value{128};
+  bool sharpen_enabled{false};
+  bool sobel_enabled{false};
 };
 
 cv::Mat processFrame(const cv::Mat& frame,
@@ -65,6 +70,19 @@ cv::Mat processFrame(const cv::Mat& frame,
 
   if (state.mean_filter_enabled) {
     processed_frame = photo_booth::meanFilter(processed_frame);
+  }
+
+  if (state.sharpen_enabled) {
+    processed_frame = photo_booth::sharpenImage(processed_frame);
+  }
+
+  if (state.threshold_enabled) {
+    processed_frame =
+        photo_booth::thresholdImage(processed_frame, state.threshold_value);
+  }
+
+  if (state.sobel_enabled) {
+    processed_frame = photo_booth::sobelEdgeImage(processed_frame);
   }
 
   return processed_frame;
@@ -145,6 +163,10 @@ void printControls() {
             << "    z      Cycle quantization levels (128 to 2)\n"
 	    << "    e      Toggle histogram equalization\n"
             << "    m      Toggle 3x3 mean filter\n"
+            << "    t      Toggle thresholding\n"
+            << "    [ / ]  Decrease/increase threshold\n"
+            << "    s      Toggle sharpening\n"
+            << "    b      Toggle Sobel edge detection\n"
             << "\n"
             << "  Analysis / display\n"
             << "    h      Toggle histogram display\n"
@@ -224,6 +246,40 @@ bool handleKey(const int key, ProcessingState& state) {
 
       std::cout << "3x3 mean filter: "
                 << (state.mean_filter_enabled ? "ON" : "OFF") << '\n';
+      break;
+
+    case 't':
+    case 'T':
+      state.threshold_enabled = !state.threshold_enabled;
+      std::cout << "Thresholding: "
+                << (state.threshold_enabled ? "ON" : "OFF")
+                << " (threshold " << state.threshold_value << ")\n";
+      break;
+
+    case '[':
+      state.threshold_value =
+          std::max(0, state.threshold_value - 16);
+      std::cout << "Threshold: " << state.threshold_value << '\n';
+      break;
+
+    case ']':
+      state.threshold_value =
+          std::min(255, state.threshold_value + 16);
+      std::cout << "Threshold: " << state.threshold_value << '\n';
+      break;
+
+    case 's':
+    case 'S':
+      state.sharpen_enabled = !state.sharpen_enabled;
+      std::cout << "Sharpening: "
+                << (state.sharpen_enabled ? "ON" : "OFF") << '\n';
+      break;
+
+    case 'b':
+    case 'B':
+      state.sobel_enabled = !state.sobel_enabled;
+      std::cout << "Sobel edge detection: "
+                << (state.sobel_enabled ? "ON" : "OFF") << '\n';
       break;
 
     case 'h':
